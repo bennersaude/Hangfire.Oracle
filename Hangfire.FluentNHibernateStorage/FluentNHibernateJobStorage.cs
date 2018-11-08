@@ -143,7 +143,7 @@ namespace Hangfire.FluentNHibernateStorage
             }
         }
 
-        private void EnsureDualHasOneRow()
+        private void EnsureDualHasOneRow(bool isRetrying = false)
         {
             try
             {
@@ -172,7 +172,13 @@ namespace Hangfire.FluentNHibernateStorage
             catch (Exception ex)
             {
                 Logger.WarnException("Issue with dual table", ex);
-                throw;
+                if (ex.InnerException?.Message.StartsWith("ORA-08177") == true && !isRetrying)
+                {
+                    Logger.Warn("ORA-08177 -> Doing one more try"); ;
+                    EnsureDualHasOneRow(true);
+                }
+                else
+                    throw;
             }
         }
 
@@ -249,6 +255,7 @@ namespace Hangfire.FluentNHibernateStorage
 
         private TransactionScope CreateTransaction(IsolationLevel? isolationLevel)
         {
+            isolationLevel = FixIsolationLevelForOracle(isolationLevel);
             return isolationLevel != null
                 ? new TransactionScope(TransactionScopeOption.Required,
                     new TransactionOptions
@@ -257,6 +264,15 @@ namespace Hangfire.FluentNHibernateStorage
                         Timeout = Options.TransactionTimeout
                     })
                 : new TransactionScope();
+        }
+
+        private IsolationLevel? FixIsolationLevelForOracle(IsolationLevel? isolationLevel)
+        {
+            if ((ProviderType == ProviderTypeEnum.OracleClient9 || ProviderType == ProviderTypeEnum.OracleClient9Managed ||
+                             ProviderType == ProviderTypeEnum.OracleClient10 || ProviderType == ProviderTypeEnum.OracleClient10Managed) &&
+                            (isolationLevel != IsolationLevel.ReadCommitted || isolationLevel != IsolationLevel.Serializable))
+                isolationLevel = IsolationLevel.ReadCommitted;
+            return isolationLevel;
         }
 
         public void ResetAll()

@@ -27,6 +27,7 @@ namespace Hangfire.FluentNHibernateStorage.JobQueue
         {
             if (queues == null) throw new ArgumentNullException("queues");
             if (queues.Length == 0) throw new ArgumentException("Queue array must be non-empty.", "queues");
+            queues = queues.Select(x => x.ToLower()).ToArray();
             Logger.Debug("Attempting to dequeue");
 
 
@@ -57,7 +58,8 @@ namespace Hangfire.FluentNHibernateStorage.JobQueue
                                         var jobQueue = session.Query<_JobQueue>()
                                             .FirstOrDefault(i =>
                                                 (i.FetchedAt == null
-                                                 || i.FetchedAt < next) && queues.Contains(i.Queue));
+                                                 || i.FetchedAt < next) && 
+                                                 queues.Contains(i.Queue.ToLower()));
                                         if (jobQueue != null)
                                         {
                                             jobQueue.FetchedAt = jobQueueFetchedAt;
