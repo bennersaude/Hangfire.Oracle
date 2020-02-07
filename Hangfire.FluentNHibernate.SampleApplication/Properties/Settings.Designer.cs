@@ -46,5 +46,20 @@ namespace Hangfire.FluentNHibernate.SampleApplication.Properties {
                 this["ConnectionStrings"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string ProviderSettings
+        {
+            get
+            {
+                return ((string)(this["ProviderSettings"]));
+            }
+            set
+            {
+                this["ProviderSettings"] = value;
+            }
+        }
     }
 }
